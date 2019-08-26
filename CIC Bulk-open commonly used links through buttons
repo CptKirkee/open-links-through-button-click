@@ -1,0 +1,210 @@
+// ==UserScript==
+// @name         CIC Bulk-open commonly used links through buttons
+// @version      0.1
+// @namespace    koppmalt@
+// @description  adds buttons to open the all relevant CIC tabs for Policy and for Functional Smart Home testing. Also adds a link to cut a rating ticket (Policy).
+// @author       koppmalt@ based on the "CIC Managed Cert Buttons Widget" script by strannec@
+// @updateURL    https://drive.corp.amazon.com/documents/Alexa%20Cetification%20Docs/Automation%20Script%20Library/CIC%20Bulk-open%20commonly%20used%20links%20through%20buttons.js
+// @match        https://skillcert.aka.amazon.com/*
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    //  --------------- Multi-Use Variables and Functions for ALL BUTTONS ---------------
+    //
+    // Call to verify current page is CIC
+    var isCIC = /skillcert/.test(window.location.href);
+
+    // Get skill ID string
+    var skillId
+    function setSkillId() {
+        if (isCIC) {
+            skillId = document.getElementById("appExternalId").innerHTML;
+            // Strip spaces from skill ID string
+            skillId = skillId.replace(/\s/g, '');
+            skillId = skillId.replace(/<.+?>.+?<[/].+?>/g, '');
+            console.log('CIC buttons script: skill ID is ',skillId);
+            GM_setValue('skillId', skillId);
+            let verify = GM_getValue('skillId', 'not assigned')
+            console.log('GM_setValue skillId is ', verify);
+        } else {
+            skillId = GM_getValue('skillId','');
+        };
+    };
+    setSkillId();
+
+    // Function to validate container prior to adding button.
+    // *** Note that the actual script for this is added below by the variable 'script'. ***
+    function buttonFooterExists() {
+        var myEle = document.getElementById('mgdCertTampermonkeyFooter');
+        if(myEle != null) {
+            return true;
+        }
+    }
+    // Function to validate and add your button to container.
+    // *** Note that the actual script for this is added below by the variable 'script'. ***
+    function addNewCertButton(yourButtonElement, fallbackFunction) {
+        if (buttonFooterExists) {
+            console.log('Managed cert button footer exists.');
+            yourButtonElement.style.margin = '3px';
+            yourButtonElement.style.whiteSpace = 'nowrap';
+            document.getElementById('tampermonkeyButtons').appendChild(yourButtonElement);
+        } else {
+             console.log('Managed cert button footer does not exist.');
+            fallbackFunction();
+        }
+    }
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.innerHTML = "function buttonFooterExists() { var myEle = document.getElementById('mgdCertTampermonkeyFooter'); if(myEle != null) { return true; } } function addNewCertButton(yourButtonElement, fallbackFunction) { if (buttonFooterExists) { console.log('Managed cert button footer exists.'); yourButtonElement.style.margin = '3px'; yourButtonElement.style.whiteSpace = 'nowrap'; document.getElementById('tampermonkeyButtons').appendChild(yourButtonElement); } else { console.log('Managed cert button footer does not exist.'); fallbackFunction(); } }";
+    document.getElementsByTagName('head')[0].appendChild(script);
+
+    //
+    //
+    //  --------------- Button Container DIV for ALL BUTTONS ---------------
+    //
+    var positionDivNode = document.createElement('DIV');
+    var fdivNode = document.createElement("DIV");
+    var ftitleNode = document.createElement("DIV");
+    var ftextNode = document.createTextNode("Quicklinks to frequently used resources");
+    var helpLinkNode = document.createElement('A');
+    var helpIconNode = document.createElement('IMG');
+    var bdivNode = document.createElement("DIV");
+
+    positionDivNode.style = "position: fixed; width: 100%; max-width: 1180px; height: 0px; margin: 0px auto; top: 40%; left: 50%; transform: translateX(-50%); border: 0px solid red;";
+
+    fdivNode.id = "mgdCertTampermonkeyFooter";
+    fdivNode.style = "position: absolute; right: 10px; width: 15%; max-width: 200px; min-width: 100px; min-height: 100px; background-color: #1e3d7b; text-align: center; font-variant: small-caps; padding: 5px; box-shadow: 2px 2px 5px black;";
+
+    ftitleNode.style = "padding: 5px; margin-bottom: 5px; background-color: #2851a4; text-align: center; color: #d6e2f5;";
+
+    helpLinkNode.id = 'mgdCertScriptHelp';
+    helpLinkNode.title = 'Open README file for this script.'
+    helpLinkNode.target = '_blank';
+    helpLinkNode.style.marginLeft = '5px';
+
+    helpIconNode.style.width = '12px';
+
+    bdivNode.id = "tampermonkeyButtons";
+
+    fdivNode.appendChild(ftitleNode);
+    ftitleNode.appendChild(ftextNode);
+    helpLinkNode.appendChild(helpIconNode);
+    ftitleNode.appendChild(helpLinkNode);
+    fdivNode.appendChild(bdivNode);
+    positionDivNode.appendChild(fdivNode);
+
+    if (isCIC) { document.body.appendChild(positionDivNode); }
+    //
+    //
+    //  --------------- Rating ticket template ---------------
+    //
+    function setSearchURLCic() {
+    let ratingBER = "https://t.corp.amazon.com/create/templates/dbe1bcec-0096-455a-9e6b-f2897e30b063"
+	btnNodeCic.addEventListener("click", function(){
+    window.open(ratingBER);
+    })
+    };
+    var btnNodeCic = document.createElement("BUTTON");
+    var btnTextCic = document.createTextNode("Rating ticket BER");
+    var searchUrlCic = setSearchURLCic();
+    btnNodeCic.id = "cicSearchBtn";
+    btnNodeCic.className = "button";
+    btnNodeCic.appendChild(btnTextCic);
+    btnNodeCic.setAttribute("onclick", searchUrlCic);
+    btnNodeCic.style.margin = "3px";
+    if (isCIC) {
+        document.getElementById("tampermonkeyButtons").appendChild(btnNodeCic);
+        document.getElementById("tampermonkeyButtons").appendChild(document.createElement('DIV'));
+    };
+    //
+    //    
+    //  --------------- Policy Testing Pages ---------------
+    var linksee = document.links;
+    console.log('links', linksee)
+    var SkillDiff = linksee.item(6); //gets link to Skill Differentiator PROBLEM: If no Skill Diff available and no ISP, Universal notes and once again GI page open. Item number are not bound to defined links
+    var isp = linksee.item(5); //gets link to ISP products
+    var containsISP = document.querySelector('tr#cxInfoTable > td > div.dialogtext > font');
+    if (containsISP) {
+    containsISP = containsISP.innerText;
+    }
+
+    var statusesList = new Array();
+    var statuses = document.getElementById('versionSelectList');
+    var whichSub = statuses.options.length;
+    console.log('whichSub', whichSub);
+    function setSearchURLSim() {
+       btnNodeSim.addEventListener("click", function(){
+       let url = window.location.href;
+       let urlTwo = url.replace("detail.html", "marketing.html");
+       let urlThree = url.replace("detail.html", "modelInfo.html");
+       let urlFour = url.replace("detail.html", "multimedia.html");
+       let urlFive = url.replace("detail.html", "workflow_history.html");
+       let urlSix = SkillDiff.href;
+       let urlSeven = isp.href;
+       if (whichSub > 1) {// checks whether it is a resubmission, if yes, launches Skill Diff, if no, does not launch skill diff
+          if (containsISP.includes("ISP")) {
+       window.open(urlTwo); 
+       window.open(urlThree);
+       window.open(urlFour);
+       window.open(urlFive);
+       window.open(urlSix);
+       window.open(urlSeven);
+          }
+          else {
+       window.open(urlTwo);
+       window.open(urlThree);
+       window.open(urlFour);
+       window.open(urlFive);
+       window.open(urlSix);
+          }
+       }
+       else {
+       window.open(urlTwo);
+       window.open(urlThree);
+       window.open(urlFour);
+       window.open(urlFive);
+       }
+       })
+    };
+ 	var btnNodeSim = document.createElement("BUTTON");
+	var btnTextSim = document.createTextNode("Open Policy Pages");
+	var searchUrlSim = setSearchURLSim();
+	btnNodeSim.id = "simSearchBtn";
+    btnNodeSim.className = "button";
+	btnNodeSim.appendChild(btnTextSim);
+	btnNodeSim.setAttribute("onclick", searchUrlSim);
+	btnNodeSim.style.margin = "3px";
+    if (isCIC) {
+        document.getElementById("tampermonkeyButtons").appendChild(btnNodeSim);
+        document.getElementById("tampermonkeyButtons").appendChild(document.createElement('DIV'));
+    };
+    //
+    //  --------------- Smart Home links ---------------
+    //
+    function openPageSH() {
+	btnNodeSH.addEventListener("click", function(){
+
+       window.open("https://wiki.labcollab.net/confluence/pages/viewpage.action?spaceKey=COPS&title=Top+Level+Domain+Golden+Utterances");
+       window.open("https://askconsole-iad.iad.proxy.amazon.com/get_skilldetails_by_skillid/");
+       window.open("https://alexa.amazon.de/spa/index.html#smart-home");
+       window.open("https://alexa.amazon.de/spa/index.html#skills/?ref-suffix=nav_nav");
+    })
+    };
+    var btnNodeSH = document.createElement("BUTTON");
+    var btnTextSH = document.createTextNode("Smart Home resources");
+    var openPageSmart = openPageSH();
+    btnNodeSH.id = "cicSearchBtn";
+    btnNodeSH.className = "button";
+    btnNodeSH.appendChild(btnTextSH);
+    btnNodeSH.setAttribute("onclick", openPageSH);
+    btnNodeSH.style.margin = "3px";
+    if (isCIC) {
+        document.getElementById("tampermonkeyButtons").appendChild(btnNodeSH);
+        document.getElementById("tampermonkeyButtons").appendChild(document.createElement('DIV'));
+    };
+})();
